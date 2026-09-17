@@ -93,19 +93,22 @@ export default function Home() {
 
     try {
       if (mode === 'signup') {
-        const { error: signUpError } = await supabase.auth.signUp({
-          email: authForm.email,
-          password: authForm.password,
-          options: {
-            data: {
-              full_name: authForm.full_name,
-              phone: authForm.phone
-            }
-          }
+        const response = await fetch('/api/signup', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(authForm)
         })
-        if (signUpError) throw signUpError
-        setMessage('Account created. If email confirmation is enabled, please confirm your email and then log in.')
-        setMode('login')
+
+        const result = await response.json()
+        if (!response.ok) throw new Error(result.error || 'Unable to create account')
+
+        const { error: loginError } = await supabase.auth.signInWithPassword({
+          email: authForm.email,
+          password: authForm.password
+        })
+        if (loginError) throw loginError
+
+        setMessage('Account created successfully. No confirmation email was sent.')
       } else {
         const { error: loginError } = await supabase.auth.signInWithPassword({
           email: authForm.email,
